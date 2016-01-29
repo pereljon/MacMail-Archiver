@@ -1,5 +1,5 @@
 # MacMail-Archiver
-AppleScript to automate archiving email from server IMAP folders to local folders while preserving folder structure from server.
+AppleScript to automate archiving email from server IMAP folders to local folders while preserving folder structure from server. The solution to not being able to copy nested mailbox folders.
 
 1. Lets you archive emails older than: {"1 month", "2 months", "3 months", "6 months", "9 months", "1 year", "2 years", "3 years"}
 2. Notifies you when it starts archiving a new mailbox
