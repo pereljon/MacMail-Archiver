@@ -16,7 +16,7 @@ on run
 	my logToFile("Starting at: " & (current date))
 	
 	-- display a dialog to prompt the user to select number of days to archive
-	set monthChoices to {"1 month", "2 months", "3 months", "6 months", "9 months", "1 year", "2 years", "3 years"}
+	set monthChoices to {"1 month", "2 months", "3 months", "6 months", "9 months", "1 year", "2 years", "3 years", "Archive all mail"}
 	set monthsToArchive to (choose from list monthChoices with title "Archive Mail" with prompt "Archive messages older than:")
 	if monthsToArchive is equal to false then
 		return
@@ -40,13 +40,16 @@ on run
 		set staledate to (current date) - (2 * 365 * days)
 	else if monthsToArchive is equal to "3 years" then
 		set staledate to (current date) - (3 * 365 * days)
+	else if monthsToArchive is equal to "Archive all mail" then
+		set archiveAll to true
 	end if
 	
 	set totalArchiveCount to 0
 	tell application "Mail"
 		activate
-		display notification "This may take a while..." with title "Archive Mail" subtitle "Starting up"
+		delay 1
 		my mailSelectMailbox(inbox)
+		display notification "This may take a while..." with title "Archive Mail" subtitle "Starting up"
 		repeat with nextAccount in every account
 			if (server name of nextAccount as string) is equal to mailServer then
 				repeat with sourceMailbox in every mailbox of nextAccount
@@ -62,8 +65,14 @@ on run
 					else
 						my logToFile("Mailbox: " & sourceMailboxName)
 						try
-							with timeout of (10 * minutes) seconds
-								set messagesToArchive to (every message of sourceMailbox whose date received is less than staledate and deleted status is false)
+							with timeout of (60 * minutes) seconds
+								display notification "Selecting messages to archive. This can take a while for large mailboxes." with title "Selecting Messages" subtitle "Mailbox: " & sourceMailboxName
+								if archiveAll is true then
+									set messagesToArchive to (every message of sourceMailbox whose deleted status is false)
+								else
+									set messagesToArchive to (every message of sourceMailbox whose date received is less than staledate and deleted status is false)
+								end if
+								set countToArchive to count of messagesToArchive
 							end timeout
 						on error errStr number errorNumber -- error creating mailbox
 							if errorNumber = -128 then -- User cancelled
@@ -76,7 +85,6 @@ on run
 							end if
 							return errorNumber
 						end try
-						set countToArchive to count of messagesToArchive
 						if countToArchive > 0 then
 							-- Found messages to archive in this folder
 							my logToFile("Archive count: " & countToArchive)
